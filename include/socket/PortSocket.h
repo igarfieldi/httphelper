@@ -1,0 +1,45 @@
+/*
+ * Socket.h
+ *
+ *  Author: Florian Bethe
+ */
+
+#ifndef HTTPHELPER_SOCKET_PORTSOCKET_H_
+#define HTTPHELPER_SOCKET_PORTSOCKET_H_
+
+#include "socket/Connection.h"
+#include <string>
+
+// TODO: compatibility with windows sockets
+namespace httphelper {
+
+typedef int SocketHandle;
+
+class PortSocket {
+private:
+	static const SocketHandle INVALID_HANDLE;
+	static const int MAX_CONNECTIONS;
+
+	std::string address;
+	unsigned int port;
+	SocketHandle handle;
+
+	bool isValidSocket() const;
+
+public:
+	PortSocket(const std::string& address, unsigned int port);
+	virtual ~PortSocket();
+
+	virtual void open();
+	virtual void waitForConnection(Connection& connection);
+	virtual bool isConnectionWaiting();
+	virtual void close();
+
+	virtual bool isOpen() const;
+
+	SocketHandle getHandle() const;
+};
+
+} /* namespace httphelper */
+
+#endif /* HTTPHELPER_SOCKET_PORTSOCKET_H_ */
