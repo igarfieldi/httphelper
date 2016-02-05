@@ -12,6 +12,7 @@
 namespace strutils {
 
 	std::string getCurrentTimeString();
+	unsigned long long getUnixMiliSeconds();
 
 } /* namespace strutils */
 

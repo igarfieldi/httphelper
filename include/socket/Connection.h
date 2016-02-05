@@ -41,12 +41,14 @@ public:
 	void setReadTimeout(size_t readTimeout);
 	void setWriteTimeout(size_t writeTimeout);
 
-	std::string read(const std::string& delim = "", size_t maxBytes = 0);
+	std::string read(const std::string& delim = "", size_t minBytes = 0, size_t maxBytes = 0);
 	void write(const std::string& str);
 
-	virtual bool isOpen();
-	virtual void open(ConnectionHandle handle);
-	virtual void close();
+	bool isReadable(long waitUSec);
+	bool isWritable(long waitUSec);
+	bool isOpen();
+	void open(ConnectionHandle handle);
+	void close();
 };
 
 } /* namespace httphelper */
