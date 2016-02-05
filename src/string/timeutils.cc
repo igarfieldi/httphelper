@@ -5,7 +5,9 @@
  */
 
 #include "string/timeutils.h"
+#include "string/stringutils.h"
 #include <time.h>
+#include <sys/time.h>
 
 namespace strutils {
 
@@ -17,7 +19,16 @@ std::string getCurrentTimeString() {
 	// No need to free/delete the char-pointer (it's internal as static)
 	// TODO: what about the time struct?
 
-	return std::string(asctime(localTime));
+	std::string timeString(asctime(localTime));
+	return stringSplit(timeString, "\n", 1)[0];
+}
+
+unsigned long long getUnixMiliSeconds() {
+	struct timeval timeStruct;
+	gettimeofday(&timeStruct, NULL);
+
+	return static_cast<unsigned long long>(timeStruct.tv_sec) * 1000 +
+			static_cast<unsigned long long>(timeStruct.tv_usec) / 1000;
 }
 
 } /* namespace strutils */

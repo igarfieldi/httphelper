@@ -53,14 +53,15 @@ bool Connection::isValidHandle(ConnectionHandle handle) {
 	return (handle != INVALID_HANDLE);
 }
 
-std::string Connection::read(const std::string& delim, size_t maxBytes) {
+std::string Connection::read(const std::string& delim, size_t minBytes, size_t maxBytes) {
 	std::string message = leftoverRead;
+	bool readFromLeftovers = !leftoverRead.empty();
 	leftoverRead = "";
 
 	memset(buffer, 0, BUFFER_SIZE);
 
-	ssize_t msgSize;
 	size_t oldMsgSize = 0;
+	ssize_t msgSize = 0;
 
 	std::chrono::high_resolution_clock::time_point timeBefore = std::chrono::high_resolution_clock::now();
 
@@ -70,8 +71,9 @@ std::string Connection::read(const std::string& delim, size_t maxBytes) {
 		// If this call took too long, throw TimeoutException
 		if(static_cast<unsigned int>(
 				std::chrono::duration_cast<std::chrono::milliseconds>(
-					std::chrono::high_resolution_clock::now() - timeBefore).count()) > readTimeout)
+					std::chrono::high_resolution_clock::now() - timeBefore).count()) > readTimeout) {
 			throw TimeoutException("Reading timeout!");
+		}
 
 		// If a delimiter is given, search for it (of course, the message has to
 		// be long enough)
@@ -93,31 +95,22 @@ std::string Connection::read(const std::string& delim, size_t maxBytes) {
 			return message.substr(0, maxBytes);
 		}
 
-		fd_set descSet;
-		FD_ZERO(&descSet);
-		FD_SET(handle, &descSet);
-
-		// Wait for ~10ms if there is something to be read
-		struct timeval timeout = {0, 10000};
-		int status = select(handle + 1, &descSet, NULL, NULL, &timeout);
-
-		if(status < 0)
-			throw CommException("Failed to wait for read descriptor!");
-
-		// TODO: is status == 0 an error case? Did the connection close or what?
-		// I don't really think so...
-
-		// If something is on the pipe to be read (i.e. recv won't block),
-		// read it
 		msgSize = 0;
-		if(status > 0) {
+		if(readFromLeftovers) {
+			readFromLeftovers = false;
+			msgSize = message.length();
+		}
+		if(this->isReadable(1000)) {
 			msgSize = recv(handle, buffer, BUFFER_SIZE, 0);
+
+			if(msgSize == 0)
+				throw CommException("Connection closed by client");
+			if(msgSize < 0)
+				throw CommException("Failed to receive message from client!");
+
 			message += buffer;
 		}
-	} while(!delim.empty() || (msgSize == BUFFER_SIZE));
-
-	if(msgSize < 0)
-		throw CommException("Failed to receive message from client!");
+	} while(!delim.empty() || (message.length() < minBytes) || (msgSize == BUFFER_SIZE));
 
 	return message;
 }
@@ -133,19 +126,7 @@ void Connection::write(const std::string& msg) {
 	std::chrono::high_resolution_clock::time_point timeBefore = std::chrono::high_resolution_clock::now();
 
 	while(sendBytes < msg.length()) {
-		fd_set descSet;
-		FD_ZERO(&descSet);
-		FD_SET(handle, &descSet);
-
-		// Wait for ~10ms if the connection is ready to be written to
-		struct timeval timeout = {0, 10000};
-		int status = select(handle + 1, NULL, &descSet, NULL, &timeout);
-
-		if(status < 0)
-			throw CommException("Failed to wait for write descriptor!");
-
-		// If we may write to the connection without blocking, do so
-		if(status > 0) {
+		if(this->isWritable(1000)) {
 			memset(buffer, 0, BUFFER_SIZE);
 			unsigned long msgLength = std::min(BUFFER_SIZE, msg.length() - sendBytes);
 			std::strncpy(buffer, &msg.c_str()[sendBytes], msgLength);
@@ -166,8 +147,41 @@ void Connection::write(const std::string& msg) {
 	}
 }
 
+bool Connection::isReadable(long waitUSec) {
+	if(!leftoverRead.empty())
+		return true;
+
+	fd_set descSet;
+	FD_ZERO(&descSet);
+	FD_SET(handle, &descSet);
+
+	// See if the connection is ready to be read from
+	struct timeval timeout = {0, waitUSec};
+	int status = select(handle + 1, &descSet, NULL, NULL, &timeout);
+
+	if(status < 0)
+		throw CommException("Failed to check read descriptor!");
+
+	return status > 0;
+}
+
+bool Connection::isWritable(long waitUSec) {
+	fd_set descSet;
+	FD_ZERO(&descSet);
+	FD_SET(handle, &descSet);
+
+	// See if the connection is ready to be written to
+	struct timeval timeout = {0, waitUSec};
+	int status = select(handle + 1, NULL, &descSet, NULL, &timeout);
+
+	if(status < 0)
+		throw CommException("Failed to check write descriptor!");
+
+	return status > 0;
+}
+
 bool Connection::isOpen() {
-	// TODO: try to write
+	// TODO: try to write?
 	return isValidHandle(handle);
 }
 
@@ -189,6 +203,7 @@ void Connection::close() {
 			if( ::close(handle) )
 				throw CommException("Failed to close connection!");
 		}
+		handle = INVALID_HANDLE;
 	}
 }
 

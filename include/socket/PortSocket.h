@@ -30,12 +30,12 @@ public:
 	PortSocket(const std::string& address, unsigned int port);
 	virtual ~PortSocket();
 
-	virtual void open();
-	virtual void waitForConnection(Connection& connection);
-	virtual bool isConnectionWaiting();
-	virtual void close();
+	void open();
+	void waitForConnection(Connection& connection);
+	bool isConnectionWaiting();
+	void close();
 
-	virtual bool isOpen() const;
+	bool isOpen() const;
 
 	SocketHandle getHandle() const;
 };
