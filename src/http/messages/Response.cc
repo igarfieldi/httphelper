@@ -37,6 +37,7 @@ std::string Response::getMessageBody() const {
 }
 void Response::setMessageBody(const std::string& msgBody) {
 	this->msgBody = msgBody;
+	this->setField(Response::CONTENT_LENGTH, std::to_string(msgBody.length()));
 }
 
 std::string Response::toString() const {

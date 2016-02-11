@@ -44,4 +44,14 @@ std::vector<std::string> stringSplit(const std::string& str,
 	return tokens;
 }
 
+bool contains(const std::vector<std::string>& list, const std::string& word) {
+	for(std::vector<std::string>::const_iterator iter = list.begin();
+			iter != list.end(); iter++) {
+		if((*iter) == word)
+			return true;
+	}
+
+	return false;
+}
+
 } /* namespace strutils */

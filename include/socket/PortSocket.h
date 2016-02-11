@@ -16,7 +16,7 @@ namespace httphelper {
 typedef int SocketHandle;
 
 class PortSocket {
-private:
+protected:
 	static const SocketHandle INVALID_HANDLE;
 	static const int MAX_CONNECTIONS;
 

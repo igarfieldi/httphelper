@@ -68,7 +68,7 @@ void Request::setUri(const std::string& uri) {
 }
 
 std::string Request::toString() const {
-	return "HTTP/1.1 " + method.getName() + " " + uri + "\r\n" +
+	return method.getName() + " " + uri + " HTTP/1.1" + "\r\n" +
 			RequestHeader::toString() + "\r\n" +
 			msgBody;
 }

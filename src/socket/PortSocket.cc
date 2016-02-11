@@ -35,28 +35,28 @@ void PortSocket::open() {
 	struct addrinfo* resolved;
 
 	// First resolve the socket's name
-	memset(&hints, 0, sizeof(hints));
+	::memset(&hints, 0, sizeof(hints));
 	hints.ai_family = AF_INET;
 	hints.ai_socktype = SOCK_STREAM;
-	if(getaddrinfo(address.c_str(), std::to_string(port).c_str(), &hints, &resolved) != 0)
+	if( ::getaddrinfo(address.c_str(), std::to_string(port).c_str(), &hints, &resolved) != 0 )
 		throw CommException("Failed to get address info!");
 
 	// Create the socket
-	handle = socket(resolved->ai_family, resolved->ai_socktype, resolved->ai_protocol);
+	handle = ::socket(resolved->ai_family, resolved->ai_socktype, resolved->ai_protocol);
 	if(!isValidSocket())
 		throw CommException("Failed to create the socket!");
 
 	// Enable address reuse
 	int reuseAddress = 1;
-	if(setsockopt(handle, SOL_SOCKET, SO_REUSEADDR, &reuseAddress, sizeof(int)) < 0)
+	if( ::setsockopt(handle, SOL_SOCKET, SO_REUSEADDR, &reuseAddress, sizeof(int)) < 0 )
 		throw CommException("Failed to specify the reuse of addresses for the socket!");
 
 	// Bind the name (address/port combi) to the socket
-	if(bind(handle, resolved->ai_addr, resolved->ai_addrlen) < 0)
+	if( ::bind(handle, resolved->ai_addr, resolved->ai_addrlen) < 0 )
 		throw CommException("Failed to bind the address to the socket!");
 
 	// Mark the socket as passively listening for connections
-	if(listen(handle, MAX_CONNECTIONS) < 0)
+	if( ::listen(handle, MAX_CONNECTIONS) < 0 )
 		throw CommException("Failed to mark the socket as passively listening!");
 }
 
@@ -64,7 +64,7 @@ void PortSocket::waitForConnection(Connection& connection) {
 	if(connection.isOpen())
 		connection.close();
 
-	connection.open(accept(handle, NULL, NULL));
+	connection.open( ::accept(handle, NULL, NULL) );
 }
 
 bool PortSocket::isConnectionWaiting() {
@@ -73,7 +73,7 @@ bool PortSocket::isConnectionWaiting() {
 	FD_SET(handle, &descSet);
 	struct timeval timeout = {0, 0};
 
-	int status = select(handle + 1, &descSet, NULL, NULL, &timeout);
+	int status = ::select(handle + 1, &descSet, NULL, NULL, &timeout);
 
 	if(status < 0)
 		throw httphelper::CommException("Failed to wait for read descriptor!");
@@ -84,7 +84,7 @@ bool PortSocket::isConnectionWaiting() {
 void PortSocket::close() {
 	// TODO: wait for open connections?
 	if(handle != INVALID_HANDLE) {
-		if(shutdown(handle, SHUT_RDWR)) {
+		if( ::shutdown(handle, SHUT_RDWR) ) {
 			// TODO: wait for incoming packets?
 		} else {
 			if( ::close(handle) )
