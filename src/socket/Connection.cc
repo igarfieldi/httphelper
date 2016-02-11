@@ -58,7 +58,7 @@ std::string Connection::read(const std::string& delim, size_t minBytes, size_t m
 	bool readFromLeftovers = !leftoverRead.empty();
 	leftoverRead = "";
 
-	memset(buffer, 0, BUFFER_SIZE);
+	::memset(buffer, 0, BUFFER_SIZE);
 
 	size_t oldMsgSize = 0;
 	ssize_t msgSize = 0;
@@ -101,7 +101,7 @@ std::string Connection::read(const std::string& delim, size_t minBytes, size_t m
 			msgSize = message.length();
 		}
 		if(this->isReadable(1000)) {
-			msgSize = recv(handle, buffer, BUFFER_SIZE, 0);
+			msgSize = ::recv(handle, buffer, BUFFER_SIZE, 0);
 
 			if(msgSize == 0)
 				throw CommException("Connection closed by client");
@@ -127,12 +127,12 @@ void Connection::write(const std::string& msg) {
 
 	while(sendBytes < msg.length()) {
 		if(this->isWritable(1000)) {
-			memset(buffer, 0, BUFFER_SIZE);
+			::memset(buffer, 0, BUFFER_SIZE);
 			unsigned long msgLength = std::min(BUFFER_SIZE, msg.length() - sendBytes);
 			std::strncpy(buffer, &msg.c_str()[sendBytes], msgLength);
 
 			// Send the remaining part of the string
-			ssize_t msgSize = send(handle, buffer, msgLength, 0);
+			ssize_t msgSize = ::send(handle, buffer, msgLength, 0);
 			if(msgSize < 0)
 				throw CommException("Failed to send message to client!");
 
@@ -157,7 +157,11 @@ bool Connection::isReadable(long waitUSec) {
 
 	// See if the connection is ready to be read from
 	struct timeval timeout = {0, waitUSec};
-	int status = select(handle + 1, &descSet, NULL, NULL, &timeout);
+	int status;
+	if(waitUSec < 0)
+		status = ::select(handle + 1, &descSet, NULL, NULL, NULL);
+	else
+		status = ::select(handle + 1, &descSet, NULL, NULL, &timeout);
 
 	if(status < 0)
 		throw CommException("Failed to check read descriptor!");
@@ -172,7 +176,11 @@ bool Connection::isWritable(long waitUSec) {
 
 	// See if the connection is ready to be written to
 	struct timeval timeout = {0, waitUSec};
-	int status = select(handle + 1, NULL, &descSet, NULL, &timeout);
+	int status;
+	if(waitUSec < 0)
+		status = ::select(handle + 1, NULL, &descSet, NULL, NULL);
+	else
+		status = ::select(handle + 1, NULL, &descSet, NULL, &timeout);
 
 	if(status < 0)
 		throw CommException("Failed to check write descriptor!");
@@ -197,7 +205,8 @@ void Connection::close() {
 	// TODO: platform independency
 	// TODO: wait for open connections?
 	if(isValidHandle(handle)) {
-		if(shutdown(handle, SHUT_RDWR)) {
+		std::cout << "Shutting down!" << std::endl;
+		if( ::shutdown(handle, SHUT_RDWR) ) {
 			// TODO: wait for incoming packets?
 		} else {
 			if( ::close(handle) )

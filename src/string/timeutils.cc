@@ -23,7 +23,7 @@ std::string getCurrentTimeString() {
 	return stringSplit(timeString, "\n", 1)[0];
 }
 
-unsigned long long getUnixMiliSeconds() {
+unsigned long long getUnixMilliSeconds() {
 	struct timeval timeStruct;
 	gettimeofday(&timeStruct, NULL);
 
