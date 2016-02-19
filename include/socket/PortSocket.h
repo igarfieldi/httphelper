@@ -32,7 +32,8 @@ public:
 
 	void open();
 	void waitForConnection(Connection& connection);
-	bool isConnectionWaiting();
+	bool waitForConnection(Connection& connection, long waitUSec);
+	bool isConnectionWaiting(long waitUSec = 0);
 	void close();
 
 	bool isOpen() const;

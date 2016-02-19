@@ -25,14 +25,14 @@ public:
 	virtual ~Response();
 
 	StatusLine getStatusLine() const;
-	void setStatusLine(const StatusLine& status);
-	void setStatusLine(StatusLine::StatusCodes code);
+	Response& setStatusLine(const StatusLine& status);
+	Response& setStatusLine(StatusLine::StatusCodes code);
 
 	std::string getMessageBody() const;
-	void setMessageBody(const std::string& msgBody);
+	Response& setMessageBody(const std::string& msgBody);
 
 	virtual std::string toString() const;
-	virtual void parse(const std::string& msg);
+	virtual Response& parse(const std::string& msg);
 };
 
 } /* namespace httphelper */

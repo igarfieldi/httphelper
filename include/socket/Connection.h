@@ -9,6 +9,7 @@
 
 #include <string>
 #include <cstring>
+#include <fstream>
 
 namespace httphelper {
 
@@ -37,12 +38,14 @@ public:
 	virtual ~Connection();
 
 	size_t getReadTimeout() const;
-	size_t getWriteTimeout() const;
 	void setReadTimeout(size_t readTimeout);
+
+	size_t getWriteTimeout() const;
 	void setWriteTimeout(size_t writeTimeout);
 
 	std::string read(const std::string& delim = "", size_t minBytes = 0, size_t maxBytes = 0);
-	void write(const std::string& str);
+	void write(const std::string& str, size_t size = 0);
+	void write(std::ifstream& file, size_t size = 0);
 
 	bool isReadable(long waitUSec);
 	bool isWritable(long waitUSec);

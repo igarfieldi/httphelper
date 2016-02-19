@@ -10,5 +10,6 @@
 #include "http/exceptions/InvalidRequestException.h"
 #include "http/exceptions/UnknownHttpVersionException.h"
 #include "http/exceptions/UnknownMethodException.h"
+#include "http/exceptions/InvalidUriException.h"
 
 #endif /* HTTPHELPER_HTTP_EXCEPTIONS_HTTPEXCEPTS_H_ */

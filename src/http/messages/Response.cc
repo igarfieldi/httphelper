@@ -24,20 +24,23 @@ StatusLine Response::getStatusLine() const {
 	return status;
 }
 
-void Response::setStatusLine(const StatusLine& status) {
+Response& Response::setStatusLine(const StatusLine& status) {
 	this->status = status;
+	return *this;
 }
 
-void Response::setStatusLine(StatusLine::StatusCodes code) {
+Response& Response::setStatusLine(StatusLine::StatusCodes code) {
 	this->status = StatusLine(code);
+	return *this;
 }
 
 std::string Response::getMessageBody() const {
 	return msgBody;
 }
-void Response::setMessageBody(const std::string& msgBody) {
+Response& Response::setMessageBody(const std::string& msgBody) {
 	this->msgBody = msgBody;
 	this->setField(Response::CONTENT_LENGTH, std::to_string(msgBody.length()));
+	return *this;
 }
 
 std::string Response::toString() const {
@@ -46,9 +49,10 @@ std::string Response::toString() const {
 			msgBody;
 }
 
-void Response::parse(const std::string& msg) {
+Response& Response::parse(const std::string& msg) {
 	std::cout << msg << std::endl;
 
+	return *this;
 	// TODO: actual implementation for correct parsing
 	/*
 	std::stringstream stream(msg);

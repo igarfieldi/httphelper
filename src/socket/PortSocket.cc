@@ -67,11 +67,22 @@ void PortSocket::waitForConnection(Connection& connection) {
 	connection.open( ::accept(handle, NULL, NULL) );
 }
 
-bool PortSocket::isConnectionWaiting() {
+bool PortSocket::waitForConnection(Connection& connection, long waitUSec) {
+	if(connection.isOpen())
+		connection.close();
+
+	if(isConnectionWaiting(waitUSec)) {
+		connection.open( ::accept(handle, NULL, NULL) );
+	}
+
+	return connection.isOpen();
+}
+
+bool PortSocket::isConnectionWaiting(long waitUSec) {
 	fd_set descSet;
 	FD_ZERO(&descSet);
 	FD_SET(handle, &descSet);
-	struct timeval timeout = {0, 0};
+	struct timeval timeout = {0, waitUSec};
 
 	int status = ::select(handle + 1, &descSet, NULL, NULL, &timeout);
 
