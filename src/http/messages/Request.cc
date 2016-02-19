@@ -5,9 +5,7 @@
  */
 
 #include "http/messages/Request.h"
-#include "http/exceptions/InvalidRequestException.h"
-#include "http/exceptions/UnknownHttpVersionException.h"
-#include "http/exceptions/UnknownMethodException.h"
+#include "http/exceptions/httpexcepts.h"
 #include "string/stringutils.h"
 #include <sstream>
 #include <algorithm>
@@ -47,24 +45,27 @@ const std::string& Request::getMessageBody() const {
 	return msgBody;
 }
 
-void Request::setMessageBody(const std::string& msgBody) {
+Request& Request::setMessageBody(const std::string& msgBody) {
 	this->msgBody = msgBody;
+	return *this;
 }
 
 RequestMethod Request::getMethod() const {
 	return method;
 }
 
-void Request::setMethod(RequestMethod method) {
+Request& Request::setMethod(RequestMethod method) {
 	this->method = method;
+	return *this;
 }
 
 const std::string& Request::getUri() const {
 	return uri;
 }
 
-void Request::setUri(const std::string& uri) {
+Request& Request::setUri(const std::string& uri) {
 	this->uri = uri;
+	return *this;
 }
 
 std::string Request::toString() const {
@@ -73,7 +74,7 @@ std::string Request::toString() const {
 			msgBody;
 }
 
-void Request::parse(const std::string& msg) {
+Request& Request::parse(const std::string& msg) {
 	if(msg.empty())
 		throw InvalidRequestException("Empty parse string!");
 
@@ -113,6 +114,8 @@ void Request::parse(const std::string& msg) {
 
 	// Let the base class do the field parsing
 	Header::parse(tokens[1]);
+
+	return *this;
 }
 
 } /* namespace httphelper */

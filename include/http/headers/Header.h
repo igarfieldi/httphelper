@@ -27,7 +27,7 @@ public:
 	std::string getField(const std::string& fieldName) const;
 
 	virtual std::string toString() const;
-	virtual void parse(const std::string& msg);
+	virtual Header& parse(const std::string& msg);
 };
 
 } /* namespace httphelper */

@@ -17,7 +17,7 @@
 namespace httphelper {
 
 const ConnectionHandle Connection::INVALID_HANDLE = -1;
-const size_t Connection::BUFFER_SIZE = 1024;
+const size_t Connection::BUFFER_SIZE = 16384;
 const size_t Connection::DEFAULT_READ_TIMEOUT = 1000;
 const size_t Connection::DEFAULT_WRITE_TIMEOUT = 5000;
 
@@ -115,7 +115,7 @@ std::string Connection::read(const std::string& delim, size_t minBytes, size_t m
 	return message;
 }
 
-void Connection::write(const std::string& msg) {
+void Connection::write(const std::string& msg, size_t size) {
 	// Try to send the string as long as no error occurs and bytes remain unsent.
 	// This will most likely only loop more than once if 'send' gets interrupted
 	// by a system call/interrupt/trap/call gate/w.e (OS specific things).
@@ -123,12 +123,15 @@ void Connection::write(const std::string& msg) {
 
 	unsigned long sendBytes = 0;
 
+	if(size == 0)
+		size = msg.length();
+
 	std::chrono::high_resolution_clock::time_point timeBefore = std::chrono::high_resolution_clock::now();
 
-	while(sendBytes < msg.length()) {
+	while(sendBytes < size) {
 		if(this->isWritable(1000)) {
 			::memset(buffer, 0, BUFFER_SIZE);
-			unsigned long msgLength = std::min(BUFFER_SIZE, msg.length() - sendBytes);
+			unsigned long msgLength = std::min(BUFFER_SIZE, size - sendBytes);
 			std::strncpy(buffer, &msg.c_str()[sendBytes], msgLength);
 
 			// Send the remaining part of the string
@@ -142,7 +145,42 @@ void Connection::write(const std::string& msg) {
 		// In case of timeout, throw exception
 		if(static_cast<unsigned int>(
 				std::chrono::duration_cast<std::chrono::milliseconds>(
-					std::chrono::high_resolution_clock::now() - timeBefore).count()) > readTimeout)
+					std::chrono::high_resolution_clock::now() - timeBefore).count()) > writeTimeout)
+			throw TimeoutException("Writing timeout!");
+	}
+}
+
+void Connection::write(std::ifstream& file, size_t size) {
+	if(size == 0) {
+		file.seekg(0, std::ios::end);
+		size = file.tellg();
+		file.seekg(0, std::ios::beg);
+		size -= file.tellg();
+	}
+
+	size_t sendBytes = 0;
+	file.seekg(0, std::ios::beg);
+
+	std::chrono::high_resolution_clock::time_point timeBefore = std::chrono::high_resolution_clock::now();
+
+	while(sendBytes < size) {
+		if(this->isWritable(1000)) {
+			::memset(buffer, 0, BUFFER_SIZE);
+			size_t msgLength = std::min(BUFFER_SIZE, size - sendBytes);
+			file.read(buffer, msgLength);
+
+			// Send the remaining part of the string
+			ssize_t msgSize = ::send(handle, buffer, msgLength, 0);
+			if(msgSize < 0)
+				throw CommException("Failed to send message to client!");
+
+			sendBytes += static_cast<size_t>(msgSize);
+		}
+
+		// In case of timeout, throw exception
+		if(static_cast<unsigned int>(
+				std::chrono::duration_cast<std::chrono::milliseconds>(
+					std::chrono::high_resolution_clock::now() - timeBefore).count()) > writeTimeout)
 			throw TimeoutException("Writing timeout!");
 	}
 }
@@ -188,6 +226,22 @@ bool Connection::isWritable(long waitUSec) {
 	return status > 0;
 }
 
+size_t Connection::getReadTimeout() const {
+	return readTimeout;
+}
+
+void Connection::setReadTimeout(size_t readTimeout) {
+	this->readTimeout = readTimeout;
+}
+
+size_t Connection::getWriteTimeout() const {
+	return writeTimeout;
+}
+
+void Connection::setWriteTimeout(size_t writeTimeout) {
+	this->writeTimeout = writeTimeout;
+}
+
 bool Connection::isOpen() {
 	// TODO: try to write?
 	return isValidHandle(handle);
@@ -205,7 +259,6 @@ void Connection::close() {
 	// TODO: platform independency
 	// TODO: wait for open connections?
 	if(isValidHandle(handle)) {
-		std::cout << "Shutting down!" << std::endl;
 		if( ::shutdown(handle, SHUT_RDWR) ) {
 			// TODO: wait for incoming packets?
 		} else {

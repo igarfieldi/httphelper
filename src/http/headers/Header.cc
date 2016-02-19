@@ -48,7 +48,7 @@ std::string Header::getField(const std::string& fieldName) const {
 	return fields.at(fieldName);
 }
 
-void Header::parse(const std::string& msg) {
+Header& Header::parse(const std::string& msg) {
 	std::vector<std::string> tokens = strutils::stringSplit(msg, "\r\n");
 
 	for(std::vector<std::string>::const_iterator iter = tokens.begin();
@@ -69,6 +69,8 @@ void Header::parse(const std::string& msg) {
 
 		this->addToField(field[0], field[1].substr(firstNonWhite, lastNonWhite - firstNonWhite + 1));
 	}
+
+	return *this;
 }
 
 std::string Header::toString() const {

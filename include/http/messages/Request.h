@@ -39,16 +39,16 @@ public:
 	virtual ~Request();
 
 	const std::string& getMessageBody() const;
-	void setMessageBody(const std::string& msgBody);
+	Request& setMessageBody(const std::string& msgBody);
 
 	RequestMethod getMethod() const;
-	void setMethod(RequestMethod method);
+	Request& setMethod(RequestMethod method);
 
 	const std::string& getUri() const;
-	void setUri(const std::string& uri);
+	Request& setUri(const std::string& uri);
 
 	virtual std::string toString() const;
-	virtual void parse(const std::string& msg);
+	virtual Request& parse(const std::string& msg);
 };
 
 } /* namespace httphelper */
